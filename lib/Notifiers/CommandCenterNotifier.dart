@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:ball_thrower_app/Config/Config.dart';
 import 'package:ball_thrower_app/Enums/Speed.dart';
 import 'package:dio/dio.dart';
@@ -11,9 +10,9 @@ class CommandCenterNotifier extends ChangeNotifier {
   Dio _dio = Dio(
     BaseOptions(
       baseUrl: Config.serverUrl,
-      connectTimeout: 300,
-      receiveTimeout: 300,
-      sendTimeout: 300,
+      connectTimeout: 1000,
+      receiveTimeout: 1000,
+      sendTimeout: 1000,
     ),
   );
   bool _serverOn = false;
@@ -29,9 +28,9 @@ class CommandCenterNotifier extends ChangeNotifier {
 
   Future<void> connectToServer() async {
     try {
-      final result = await InternetAddress.lookup('${Config.serverUrl}/status');
-      _serverOn = (result.isNotEmpty && result[0].rawAddress.isNotEmpty);
-    } on SocketException catch (_) {
+      final Response res = await _dio.get(Config.serverUrl + '/status');
+      _serverOn = res.statusCode == 200;
+    } catch (_) {
       _serverOn = false;
     }
     if (!_serverOn) {
@@ -43,7 +42,7 @@ class CommandCenterNotifier extends ChangeNotifier {
 
   Future<bool> _sendCommandToServer(String path, String errActionMsg) async {
     try {
-      final res = await _dio.get(Config.serverUrl + '/' + path);
+      final Response res = await _dio.get(Config.serverUrl + '/' + path);
       return res.statusCode == 200;
     } catch (err) {
       asuka.showDialog(
